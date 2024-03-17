@@ -88,7 +88,7 @@ func (r *RedisRepo) DeleteByID(ctx context.Context, id uint64) error {
 		txn.Discard()
 		return fmt.Errorf("failed to remove from orders sets: %w", err)
 	}
-	
+
 	if _, err := txn.Exec(ctx); err != nil {
 		return fmt.Errorf("failed to exec: %w", err)
 	}
@@ -115,10 +115,48 @@ func (r *RedisRepo) Update(ctx context.Context, order model.Order) error {
 }
 
 type FindAllPage struct {
-	Size   uint
-	Offset uint // cursor
+	Size   uint64
+	Offset uint64 // cursor
 }
 
-func (r *RedisRepo) FindAll(ctx context.Context, page FindAllPage) ([]model.Order, error) {
-	return nil, nil
+type FindResult struct {
+	Orders []model.Order
+	Cursor uint64
+}
+
+func (r *RedisRepo) FindAll(ctx context.Context, page FindAllPage) (FindResult, error) {
+	res := r.Client.SScan(ctx, "orders", page.Offset, "*", int64(page.Size))
+
+	keys, cursor, err := res.Result()
+	if err != nil {
+		return FindResult{}, fmt.Errorf("failed to get order ids: %w", err)
+	}
+
+	if len(keys) == 0 {
+		return FindResult{}, nil
+	}
+
+	xs, err := r.Client.MGet(ctx, keys...).Result()
+	if err != nil {
+		return FindResult{}, fmt.Errorf("failed to get orders: %w", err)
+	}
+
+	orders := make([]model.Order, len(xs))
+
+	for i, x := range xs {
+		x := x.(string)
+		var order model.Order
+
+		err := json.Unmarshal([]byte(x), &order)
+
+		if err != nil {
+			return FindResult{}, fmt.Errorf("failed to decode order json: %w", err)
+		}
+
+		orders[i] = order
+	}
+	return FindResult{
+		Orders: orders,
+		Cursor: cursor,
+	}, nil
 }
