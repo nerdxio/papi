@@ -6,9 +6,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/nerdxio/chi-demo/handler"
+	"github.com/nerdxio/chi-demo/repository/order"
 )
 
-func loadRouters() *chi.Mux {
+func (a *App) loadRouters() {
 
 	router := chi.NewRouter()
 
@@ -18,12 +19,16 @@ func loadRouters() *chi.Mux {
 	})
 
 	// sub route
-	router.Route("/orders", loadOrderRoutes)
-	return router
+	router.Route("/orders", a.loadOrderRoutes)
+	a.router = router
 }
 
-func loadOrderRoutes(r chi.Router) {
-	oh := handler.Order{}
+func (a *App) loadOrderRoutes(r chi.Router) {
+	oh := handler.Order{
+		Repo: &order.RedisRepo{
+			Client: a.rdb,
+		},
+	}
 	r.Post("/", oh.Create)
 	r.Put("/{id}", oh.UpdateById)
 	r.Delete("/{id}", oh.DeleteById)

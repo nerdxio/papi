@@ -3,9 +3,13 @@ package handler
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/nerdxio/chi-demo/repository/order"
 )
 
-type Order struct{}
+type Order struct {
+	Repo *order.RedisRepo
+}
 
 func (o *Order) Create(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Order Created")
