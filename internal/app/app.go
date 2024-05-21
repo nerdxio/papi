@@ -11,45 +11,40 @@ import (
 )
 
 type App struct {
-	router http.Handler
-	rdb    *redis.Client
+	Router http.Handler
+	Rdb    *redis.Client
 }
 
 func New() *App {
-	app := &App{
-		rdb: redis.NewClient(&redis.Options{}),
+	return &App{
+		Rdb: redis.NewClient(&redis.Options{}),
 	}
-
-	app.loadRouters()
-
-	return app
 }
 
 func (a *App) Start(ctx context.Context) error {
 	server := &http.Server{
-		Addr:    ":3030",
-		Handler: a.router,
+		Addr:    ":3000",
+		Handler: a.Router,
 	}
 
-	err := a.rdb.Ping(ctx).Err()
-
+	err := a.Rdb.Ping(ctx).Err()
 	if err != nil {
 		return fmt.Errorf("fail to connect to redis client %w", err)
 	}
 
 	defer func() {
-		if err := a.rdb.Close(); err != nil {
+		if err := a.Rdb.Close(); err != nil {
 			log.Println("Failed to close redis", err)
 		}
 	}()
 
-	log.Println("Stating the Server on port ", server.Addr)
+	log.Println("Starting the Server on port ", server.Addr)
 
 	ch := make(chan error, 1)
 	go func() {
 		err = server.ListenAndServe()
 		if err != nil {
-			ch <- fmt.Errorf("fail tp start the server %w", err)
+			ch <- fmt.Errorf("fail to start the server %w", err)
 		}
 		close(ch)
 	}()
@@ -62,5 +57,4 @@ func (a *App) Start(ctx context.Context) error {
 		defer cancel()
 		return server.Shutdown(timeout)
 	}
-
 }

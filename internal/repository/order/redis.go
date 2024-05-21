@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/nerdxio/chi-demo/internal/model"
 
-	"github.com/nerdxio/chi-demo/model"
 	"github.com/redis/go-redis/v9"
 )
 
