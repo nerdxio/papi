@@ -10,6 +10,8 @@ This documentation provides a guide to the web service project implemented in Go
 │       └── main.go
 │
 ├── /internal
+│   ├── /app
+│   │   └── app.go
 │   ├── /handler
 │   │   └── order.go
 │   ├── /model
