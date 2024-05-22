@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/nerdxio/chi-demo/config"
 	"log"
 	"net/http"
 	"time"
@@ -13,17 +14,21 @@ import (
 type App struct {
 	Router http.Handler
 	Rdb    *redis.Client
+	config config.Config
 }
 
-func New() *App {
+func New(cfg config.Config) *App {
 	return &App{
-		Rdb: redis.NewClient(&redis.Options{}),
+		Rdb: redis.NewClient(&redis.Options{
+			Addr: cfg.RedisAddress,
+		}),
+		config: cfg,
 	}
 }
 
 func (a *App) Start(ctx context.Context) error {
 	server := &http.Server{
-		Addr:    ":3000",
+		Addr:    fmt.Sprintf(":%d", a.config.ServerPort),
 		Handler: a.Router,
 	}
 
